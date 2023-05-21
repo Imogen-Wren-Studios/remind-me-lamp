@@ -15,12 +15,5 @@ Light lights up untill task is done
 */
 
 
-#define LIGHT_SENSE_PIN  A1
-#define DAYTIME_LIGHT_THRESHOLD  150
-#define NIGHTTIME_LIGHT_THRESHOLD 90
-
-#define YELLOW_LED_PIN 3
-#define BLUE_LED_PIN 5
-#define PINK_LED_PIN
 
 // Or could use fastLED
