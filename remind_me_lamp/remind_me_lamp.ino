@@ -29,13 +29,14 @@ CRGB leds[NUM_LEDS];
 
 #define UPDATES_PER_SECOND 100
 
-
+#define RANDOMSEED_PIN A2
 
 #define LIGHT_SENSE_PIN A0
 #define LIGHT_SENSE_DAY_LEVEL 700
 #define LIGHT_SENSE_NIGHT_LEVEL 800
 
 bool night_mode = false;
+bool last_mode;
 
 #define BLUE_BUTTON_PIN 13
 #define BUTTON_ZERO_PIN A3
@@ -68,20 +69,37 @@ void sampleLDR() {
     int lightLevel = analogRead(LIGHT_SENSE_PIN);
     Serial.print("Light Level: ");
     Serial.print(lightLevel);
-    Serial.print("Night Mode: ");
+    Serial.print("   Night Mode: ");
     if (lightLevel >= LIGHT_SENSE_NIGHT_LEVEL) {
       Serial.println("Nighttime");
+      night_mode = true;
+      leds[0] = CHSV(0, 0, 0);
     } else {
       Serial.println("Daytime");
+      night_mode = false;
+      if (night_mode != last_mode){
+        Serial.println("New Day! ");
+        allOn();
+      }
     }
+    last_mode = night_mode;
+  }
+}
+
+void allOn() {
+  uint8_t startHue = random8();
+  Serial.print("Start Hue: ");
+  Serial.println(startHue);
+  // leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+  for (int i = 0; i < NUM_LEDS; ++i) {
+    leds[i] = CHSV(startHue + (i * 10), 255, BRIGHTNESS);
   }
 }
 
 
-
 void setup() {
   Serial.begin(115200);
-  randomSeed(5);
+  randomSeed(analogRead(RANDOMSEED_PIN));
   pinMode(BUTTON_ZERO_PIN, INPUT_PULLUP);
   pinMode(BUTTON_ONE_PIN, INPUT_PULLUP);
   pinMode(BUTTON_TWO_PIN, INPUT_PULLUP);
@@ -92,13 +110,8 @@ void setup() {
   }
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
-  uint8_t startHue = random8();
-  Serial.print("Start Hue: ");
-  Serial.println(startHue);
-  // leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
-  for (int i = 0; i < NUM_LEDS; ++i) {
-    leds[i] = CHSV(startHue + (i * 5), 255, BRIGHTNESS);
-  }
+  allOn();
+  leds[0] = CHSV(0, 0, 0);
 }
 
 
@@ -114,34 +127,34 @@ void loop() {
   if (buttonArray[0].shortPress) {
     Serial.println("Button Zero Pressed");
     buttonArray[0].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
-    leds[0] = CHSV(0, 0, 0);
+    leds[1] = CHSV(0, 0, 0);
   }
 
   if (buttonArray[1].shortPress) {
     Serial.println("Button One Pressed");
     buttonArray[1].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
-    leds[1] = CHSV(0, 0, 0);
+    leds[2] = CHSV(0, 0, 0);
   }
 
   if (buttonArray[2].shortPress) {
     Serial.println("Button Two Pressed");
     buttonArray[2].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
-    leds[2] = CHSV(0, 0, 0);
+    leds[3] = CHSV(0, 0, 0);
   }
 
   if (buttonArray[3].shortPress) {
     Serial.println("Button Three Pressed");
     buttonArray[3].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
-    leds[3] = CHSV(0, 0, 0);
+    leds[4] = CHSV(0, 0, 0);
   }
 
   if (buttonArray[4].shortPress) {
     Serial.println("Blue Button Pressed");
     buttonArray[4].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
-    leds[4] = CHSV(0, 0, 0);
+    allOn();
+   // leds[0] = CHSV(0, 0, 0);
   }
 
   FastLED.show();
   FastLED.delay(1000 / UPDATES_PER_SECOND);
 }
-
