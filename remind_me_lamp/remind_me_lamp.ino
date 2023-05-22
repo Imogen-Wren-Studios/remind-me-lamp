@@ -18,9 +18,22 @@ Light lights up untill task is done
 
 // Or could use fastLED
 
+#include <FastLED.h>
+
+#define LED_PIN 5
+#define NUM_LEDS 5
+#define BRIGHTNESS 64
+#define LED_TYPE WS2811
+#define COLOR_ORDER GRB
+CRGB leds[NUM_LEDS];
+
+#define UPDATES_PER_SECOND 100
+
+
+
 #define LIGHT_SENSE_PIN A0
-#define LIGHT_SENSE_DAY_LEVEL 200
-#define LIGHT_SENSE_NIGHT_LEVEL 50
+#define LIGHT_SENSE_DAY_LEVEL 700
+#define LIGHT_SENSE_NIGHT_LEVEL 800
 
 bool night_mode = false;
 
@@ -34,36 +47,101 @@ bool night_mode = false;
 
 #include <buttonObject.h>
 
+#include <autoDelay.h>
+
+autoDelay sampleDelay;
+
+#define SAMPLE_DELAY_S 1
+
 buttonObject buttonArray[5] = {
-  buttonObject(BLUE_BUTTON_PIN, BUTTON_PULL_LOW),
   buttonObject(BUTTON_ZERO_PIN, BUTTON_PULL_LOW),
   buttonObject(BUTTON_ONE_PIN, BUTTON_PULL_LOW),
   buttonObject(BUTTON_TWO_PIN, BUTTON_PULL_LOW),
-  buttonObject(BUTTON_THREE_PIN, BUTTON_PULL_LOW)
-   };  // Set up instance of buttonObject. Pass Button Pin & whether it pulls HIGH, or LOW when pressed.
+  buttonObject(BUTTON_THREE_PIN, BUTTON_PULL_LOW),
+  buttonObject(BLUE_BUTTON_PIN, BUTTON_PULL_LOW)
+};  // Set up instance of buttonObject. Pass Button Pin & whether it pulls HIGH, or LOW when pressed.
+
+
+
+void sampleLDR() {
+  if (sampleDelay.secondsDelay(SAMPLE_DELAY_S)) {
+    int lightLevel = analogRead(LIGHT_SENSE_PIN);
+    Serial.print("Light Level: ");
+    Serial.print(lightLevel);
+    Serial.print("Night Mode: ");
+    if (lightLevel >= LIGHT_SENSE_NIGHT_LEVEL) {
+      Serial.println("Nighttime");
+    } else {
+      Serial.println("Daytime");
+    }
+  }
+}
+
+
 
 void setup() {
   Serial.begin(115200);
-  pinMode(BLUE_BUTTON_PIN, INPUT_PULLUP);
+  randomSeed(5);
   pinMode(BUTTON_ZERO_PIN, INPUT_PULLUP);
   pinMode(BUTTON_ONE_PIN, INPUT_PULLUP);
   pinMode(BUTTON_TWO_PIN, INPUT_PULLUP);
   pinMode(BUTTON_THREE_PIN, INPUT_PULLUP);
-
+  pinMode(BLUE_BUTTON_PIN, INPUT_PULLUP);
   for (int i = 0; i < 5; i++) {
     buttonArray[i].begin();
+  }
+  FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.setBrightness(BRIGHTNESS);
+  uint8_t startHue = random8();
+  Serial.print("Start Hue: ");
+  Serial.println(startHue);
+  // leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+  for (int i = 0; i < NUM_LEDS; ++i) {
+    leds[i] = CHSV(startHue + (i * 5), 255, BRIGHTNESS);
   }
 }
 
 
 void loop() {
 
-   for (int i = 0; i < 5; i++) {
+
+  sampleLDR();
+
+  for (int i = 0; i < 5; i++) {
     buttonArray[i].buttonLoop();
   }
 
   if (buttonArray[0].shortPress) {
-    Serial.println("Blue Button Pressed");
-     buttonArray[0].buttonReset();     // .buttonReset method resets longPress & shortPress variables once action has been taken
+    Serial.println("Button Zero Pressed");
+    buttonArray[0].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
+    leds[0] = CHSV(0, 0, 0);
   }
+
+  if (buttonArray[1].shortPress) {
+    Serial.println("Button One Pressed");
+    buttonArray[1].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
+    leds[1] = CHSV(0, 0, 0);
+  }
+
+  if (buttonArray[2].shortPress) {
+    Serial.println("Button Two Pressed");
+    buttonArray[2].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
+    leds[2] = CHSV(0, 0, 0);
+  }
+
+  if (buttonArray[3].shortPress) {
+    Serial.println("Button Three Pressed");
+    buttonArray[3].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
+    leds[3] = CHSV(0, 0, 0);
+  }
+
+  if (buttonArray[4].shortPress) {
+    Serial.println("Blue Button Pressed");
+    buttonArray[4].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
+    leds[4] = CHSV(0, 0, 0);
+  }
+
+  FastLED.show();
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
 }
+
