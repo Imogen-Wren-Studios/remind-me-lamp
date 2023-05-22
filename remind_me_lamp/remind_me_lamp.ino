@@ -58,7 +58,12 @@ void setup() {
 
 void loop() {
 
+   for (int i = 0; i < 5; i++) {
+    buttonArray[i].buttonLoop();
+  }
+
   if (buttonArray[0].shortPress) {
     Serial.println("Blue Button Pressed");
+     buttonArray[0].buttonReset();     // .buttonReset method resets longPress & shortPress variables once action has been taken
   }
 }
