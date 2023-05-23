@@ -63,6 +63,8 @@ buttonObject buttonArray[5] = {
 };  // Set up instance of buttonObject. Pass Button Pin & whether it pulls HIGH, or LOW when pressed.
 
 
+Serial.
+
 
 void sampleLDR() {
   if (sampleDelay.secondsDelay(SAMPLE_DELAY_S)) {
@@ -74,10 +76,10 @@ void sampleLDR() {
       Serial.println("Nighttime");
       night_mode = true;
       leds[0] = CHSV(0, 0, 0);
-    } else {
+    } else if (lightLevel < LIGHT_SENSE_DAY_LEVEL) {
       Serial.println("Daytime");
       night_mode = false;
-      if (night_mode != last_mode){
+      if (night_mode != last_mode) {
         Serial.println("New Day! ");
         allOn();
       }
@@ -152,7 +154,7 @@ void loop() {
     Serial.println("Blue Button Pressed");
     buttonArray[4].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
     allOn();
-   // leds[0] = CHSV(0, 0, 0);
+    // leds[0] = CHSV(0, 0, 0);
   }
 
   FastLED.show();
