@@ -32,11 +32,10 @@ CRGB leds[NUM_LEDS];
 #define RANDOMSEED_PIN A2
 
 #define LIGHT_SENSE_PIN A0
-#define LIGHT_SENSE_DAY_LEVEL 700
+#define LIGHT_SENSE_DAY_LEVEL 1000
 #define LIGHT_SENSE_NIGHT_LEVEL 800
 
-bool night_mode = false;
-bool last_mode;
+
 
 #define BLUE_BUTTON_PIN 13
 #define BUTTON_ZERO_PIN A3
@@ -51,8 +50,10 @@ bool last_mode;
 #include <autoDelay.h>
 
 autoDelay sampleDelay;
+autoDelay nightDelay;
 
 #define SAMPLE_DELAY_S 1
+#define NIGHT_MINUTES_DELAY 240  // 60*4 =
 
 buttonObject buttonArray[5] = {
   buttonObject(BUTTON_ZERO_PIN, BUTTON_PULL_LOW),
@@ -62,27 +63,17 @@ buttonObject buttonArray[5] = {
   buttonObject(BLUE_BUTTON_PIN, BUTTON_PULL_LOW)
 };  // Set up instance of buttonObject. Pass Button Pin & whether it pulls HIGH, or LOW when pressed.
 
-
+bool night_mode = false;
+bool last_mode;
 
 void sampleLDR() {
   if (sampleDelay.secondsDelay(SAMPLE_DELAY_S)) {
     int lightLevel = analogRead(LIGHT_SENSE_PIN);
     Serial.print("Light Level: ");
     Serial.print(lightLevel);
-    Serial.print("   Night Mode: ");
-    if (lightLevel >= LIGHT_SENSE_NIGHT_LEVEL) {
-      Serial.println("Nighttime");
-      night_mode = true;
-      leds[0] = CHSV(0, 0, 0);
-    } else {
-      Serial.println("Daytime");
-      night_mode = false;
-      if (night_mode != last_mode){
-        Serial.println("New Day! ");
-        allOn();
-      }
+    if (lightLevel < LIGHT_SENSE_DAY_LEVEL) {
+      Serial.println("Daylight Detected");
     }
-    last_mode = night_mode;
   }
 }
 
@@ -110,50 +101,102 @@ void setup() {
   }
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
-  allOn();
-  leds[0] = CHSV(0, 0, 0);
+  startDay();
+  leds[0] = CHSV(0, 0, 0);  // turn off first LED
 }
 
 
+// state machine
+/*
+
+Init -> day mode.
+- wait for user input
+if all lights are off -> night mode.
+night mode waits for at least 4 hours
+- check LDR untill brightness > 1000
+-> day mode
+button [4] resets to daymode at any point
+*/
+
+
+
+bool initDayMode = false;
+bool initNightMode = false;
+bool startSensing = false;
+
+void startDay() {
+  for (int i; i < 5; i++) {
+    ledStates[i] = true;
+  }
+  allOn();
+}
+
+
+
+void nightMode() {
+  if nightDelay
+    .minutesDelayEvent(NIGHT_MINUTES_DELAY) {
+      startSensing = true;
+    }
+  if (startSensing) {
+    sampleLDR();
+  }
+}
+
+bool ledStates[5] = {
+  1,
+  1,
+  1,
+  1,
+  1
+}
+
+void
+applyLEDstates() {
+  // Assume all lights always start from 1
+  for (int i; i < 4; i++) {
+    if (ledStates[i]) {
+      // do nothing
+    } else {
+      leds[i] = CHSV(0, 0, 0);
+    }
+  }
+}
+
 void loop() {
 
+  // sampleLDR();  // This needs to change
 
-  sampleLDR();
+  if (initDayMode) {
+    Serial.println("Good Morning - New Day Initialised");
+    startDay();
+    initDayMode = false;
+  }
 
   for (int i = 0; i < 5; i++) {
     buttonArray[i].buttonLoop();
+    if (i < 4) {
+      if (buttonArray[i].shortPress) {
+        buffer[16];
+        sprintf(buffer, "Button [ %i ] Pressed");
+        Serial.println(buffer);
+        buttonArray[i].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
+        ledStates[i + 1] = false;
+      }
+    } else {
+      if (buttonArray[4].shortPress) {
+        Serial.println("Blue Button Pressed");
+        buttonArray[4].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
+        initDayMode = true;
+        // leds[0] = CHSV(0, 0, 0);
+      }
+    }
   }
 
-  if (buttonArray[0].shortPress) {
-    Serial.println("Button Zero Pressed");
-    buttonArray[0].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
-    leds[1] = CHSV(0, 0, 0);
+  if (initNightMode) {
   }
 
-  if (buttonArray[1].shortPress) {
-    Serial.println("Button One Pressed");
-    buttonArray[1].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
-    leds[2] = CHSV(0, 0, 0);
-  }
-
-  if (buttonArray[2].shortPress) {
-    Serial.println("Button Two Pressed");
-    buttonArray[2].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
-    leds[3] = CHSV(0, 0, 0);
-  }
-
-  if (buttonArray[3].shortPress) {
-    Serial.println("Button Three Pressed");
-    buttonArray[3].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
-    leds[4] = CHSV(0, 0, 0);
-  }
-
-  if (buttonArray[4].shortPress) {
-    Serial.println("Blue Button Pressed");
-    buttonArray[4].buttonReset();  // .buttonReset method resets longPress & shortPress variables once action has been taken
-    allOn();
-   // leds[0] = CHSV(0, 0, 0);
-  }
+  applyLEDstates();
 
   FastLED.show();
   FastLED.delay(1000 / UPDATES_PER_SECOND);
