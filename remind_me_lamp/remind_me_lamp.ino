@@ -46,9 +46,9 @@ bool last_mode;
 
 #define LED_DATA_PIN 5
 
-#include <buttonObject.h>
+#include <buttonObject.h> // https://github.com/PanGalacticTech/buttonObject_Library
 
-#include <autoDelay.h>
+#include <autoDelay.h>  // https://github.com/PanGalacticTech/autoDelay_Library
 
 autoDelay sampleDelay;
 
